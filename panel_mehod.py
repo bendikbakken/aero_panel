@@ -2,6 +2,9 @@ import numpy as np
 
 
 def camber(x):
+    """
+    Camber function
+    """
     z = np.zeros(np.size(x))
     for i in range(len(x)):
         if x[i] <= 0.4:
@@ -11,7 +14,14 @@ def camber(x):
     return z
 
 
-def make_panels(func, n, c):
+def make_panels(func, n, c=1):
+    """
+    Constructs panels and returns important points
+    :param func: Camber function
+    :param n: Number of panels
+    :param c: Chord length (normalized: c=1)
+    :return: location of panel edges, circulation points, collocation points and alpha_i
+    """
     panels_x = np.linspace(0, c, n + 1)
     panels_z = func(panels_x)
     circ_x = panels_x[:-1] + 1 / 4 * c / n
@@ -23,6 +33,9 @@ def make_panels(func, n, c):
 
 
 def calc_coeff(circ_x, circ_z, colloc_x, colloc_z, alpha_i, Q, alpha):
+    """
+    Function uses linear algebra to calculate coefficients to be solved by solver
+    """
     n = np.size(circ_x)
     n_i = np.array([np.sin(alpha_i), np.cos(alpha_i)])
     a = np.zeros((n, n))
@@ -33,10 +46,13 @@ def calc_coeff(circ_x, circ_z, colloc_x, colloc_z, alpha_i, Q, alpha):
                     1 / (2 * np.pi) * 1 / ((colloc_x - circ_x[j]) ** 2 + (colloc_z - circ_z[j]) ** 2))
         a[:, j] = np.array([a @ n for a, n in zip(aj.T, n_i.T)])
 
-    b = -Q**2 * np.sin(alpha + alpha_i)
+    b = -Q * np.sin(alpha + alpha_i)
     return a, b
 
 def stream(x, z, Q, alpha, gamma, circ_x, circ_z):
+    """
+    Function uses circulation of the panels to calculate streamfunction around airfoil
+    """
     p = Q * (z * np.cos(alpha) - x * np.sin(alpha))  # uniform flow
     for g, x0, z0 in zip(gamma, circ_x, circ_z):
         p += g / (2 * np.pi) * np.log(np.sqrt((x - x0) ** 2 + (z - z0) ** 2))  # Vortex elements
